@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zvedací most – 3D model</title>
+<style>
+:root{--bg:#dfe8f0;--fg:#1c2430;--card:#ffffffe6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12171e;--fg:#e6ebf1;--card:#1d242de6}}
+:root[data-theme="dark"]{--bg:#12171e;--fg:#e6ebf1;--card:#1d242de6}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:14px system-ui,sans-serif}
+#w{position:relative;width:100%;height:100%}
+#ui{position:absolute;left:10px;right:10px;bottom:10px;display:flex;gap:8px;align-items:center;background:var(--card);padding:8px 12px;border-radius:10px}
+#st{flex:1}
+button{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid #8896;background:transparent;color:inherit}
+#h{position:absolute;top:8px;left:10px;font-size:12px;opacity:.75}
+#io{position:absolute;top:30px;left:10px;right:10px;display:flex;flex-wrap:wrap;gap:4px;font-size:12px}
+.chip{padding:2px 7px;border-radius:6px;background:var(--card)}
+</style></head><body>
+<div id="w"><div id="h">Táhni = otáčení, kolečko = zoom. Rozměry v cm.</div><div id="io"></div>
+<div id="ui"><div id="st"></div><button id="sp">Rychlost ×1</button><button id="p">Pauza</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+const w=document.getElementById('w'),R=new THREE.WebGLRenderer({antialias:true});
+w.appendChild(R.domElement);R.domElement.style.display='block';
+const S=new THREE.Scene();S.background=new THREE.Color(0xdfe8f0);
+const cam=new THREE.PerspectiveCamera(40,1,1,500);
+let th=.9,ph=1.05,d=95;const tg=new THREE.Vector3(0,5,0);
+function rs(){const W=w.clientWidth,H=w.clientHeight;R.setSize(W,H);cam.aspect=W/H;cam.updateProjectionMatrix()}
+addEventListener('resize',rs);rs();
+S.add(new THREE.AmbientLight(0xffffff,.7));
+const dl=new THREE.DirectionalLight(0xffffff,.6);dl.position.set(30,60,40);S.add(dl);
+const M=c=>new THREE.MeshLambertMaterial({color:c});
+function box(a,b,c,col,x,y,z,p=S){const m=new THREE.Mesh(new THREE.BoxGeometry(a,b,c),M(col));m.position.set(x,y,z);p.add(m);return m}
+function ball(col,x,y,z){const m=new THREE.Mesh(new THREE.SphereGeometry(.4,12,8),new THREE.MeshBasicMaterial({color:col}));m.position.set(x,y,z);S.add(m);return m}
+function seg(a,b,col){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a),new THREE.Vector3(...b)]);const l=new THREE.Line(g,new THREE.LineBasicMaterial({color:col}));S.add(l);return l}
+const BL=0x3b7dd8,GR=0xb0b8c0,RD=0x333840,MAX=1.26;
+[-1,1].forEach(s=>box(40,2,80,0xcdbfa0,s*29,-1,0));
+const wt=box(18,2,80,0x4a90c2,0,-1.5,0);wt.material.transparent=true;wt.material.opacity=.85;
+[-1,1].forEach(s=>{
+ [-2.1,2.1].forEach(z=>{box(2.4,16,1,BL,s*10,8,z);box(1.6,8,1,BL,s*23.6,4,z);
+  seg([s*10,16,z],[s*23.6,8,z],0xc0c8d0);seg([s*10,16,z],[0,15.5,z],GR)});
+ box(2.8,1,5.2,BL,s*10,15.5,0);box(2,1,5.2,BL,s*23.6,7.5,0);
+ box(15.6,.6,3.2,RD,s*16.6,3.7,0);box(1.4,1.2,1.4,0x222,s*9.4,16.6,0);
+});
+box(17.6,.6,.8,GR,0,15.5,-2.1);box(17.6,.6,.8,GR,0,15.5,2.1);
+const arm=[-1,1].map(s=>{const g=new THREE.Group();g.position.set(s*8.8,3.7,0);S.add(g);box(8.8,.6,3.2,RD,-s*4.4,0,0,g);return g});
+const cord=[-1,1].map(s=>seg([0,0,0],[1,1,1],0xffd23f));
+const lim=[-1,1].map(s=>box(.6,.7,.8,0xff8800,s*8.45,7.7,1.6));      // koncové mikrospínače
+[-1,1].forEach(s=>{box(.15,.15,1.9,0x222,s*13,6.5,-s*.95);box(.12,1.2,.12,0x555,s*13,5.9,0);box(.4,.4,.4,0x2255cc,s*13,5.2,0)});
+const laser=seg([-13,5.2,0],[13,5.2,0],0x66ff66);              // laser snímače aut
+function sig(x,y,z,h){box(.3,h,.3,0x222,x,y,z);return{r:ball(0xff3030,x,y+h/2+.4,z),g:ball(0x22ee55,x,y+h/2-.4,z)}}
+function setS(s,go){s.g.material.color.set(go?0x22ee55:0x1b3a24);s.r.material.color.set(go?0x4a1414:0xff3030)}
+const car_s=[sig(-13,5.1,1.9,2.8),sig(13,5.1,-1.9,2.8)],boat_s=[sig(-9.8,1.5,-16,3),sig(9.8,1.5,16,3)];
+const beams=[-20,20].map(z=>{box(.6,.6,.6,0x222,-9.4,.9,z);box(.6,.6,.6,0x888,9.4,.9,z);return seg([-9.4,.9,z],[9.4,.9,z],0xff9900)});
+// aktéři
+const cars=[],boats=[],COL=[0xe74c3c,0xf1c40f,0x2ecc71,0x9b59b6,0xe67e22];let cn=0;
+function mkCar(x){const g=new THREE.Group();box(3.2,.9,2,COL[cn++%5],0,.45,0,g);box(1.6,.7,1.8,0x9ad,-.2,1.2,0,g);g.position.set(x,4,0);S.add(g);cars.push({g,x})}
+function mkBoat(d,z){const g=new THREE.Group();box(3,1,7,d>0?0xc0392b:0x1f8a8a,0,0,0,g);box(2,1.4,2.5,0xeeeeee,0,1.2,1,g);box(.3,9,.3,0x999,0,5,-1,g);g.rotation.y=d>0?0:Math.PI;g.position.set(d>0?3:-3,.2,z);S.add(g);boats.push({g,z,d})}
+// scénář: auta, 2 lodě za sebou, loď naproti, další auta a lodě
+const SP=[[0,'c'],[1.6,'c'],[4,'b'],[6,'c'],[7,'c'],[12,'b'],[13,'B'],[40,'c'],[41.5,'c'],[43,'c'],[47,'B'],[49,'B'],[56,'b'],[58,'c']],LOOP=75;
+let ts=0,si=0;
+function spawn(k){
+ if(k=='c')mkCar(Math.min(-46,...cars.map(c=>c.x-4.5)));
+ if(k=='b')mkBoat(1,Math.min(-40,...boats.filter(o=>o.d>0).map(o=>o.z-9)));
+ if(k=='B')mkBoat(-1,Math.max(40,...boats.filter(o=>o.d<0).map(o=>o.z+9)));
+}
+function lead(a,o,k,dr){let m=null;a.forEach(q=>{if(q!==o&&(q.d||1)==dr&&dr*(q[k]-o[k])>0&&(!m||dr*(q[k]-m[k])<0))m=q});return m}
+function mv(a,o,k,v,stop,go,gap,dt){const dr=o.d||1;let n=o[k]+dr*v*dt;
+ if(!go&&dr*(o[k]-stop)<=0&&dr*(n-stop)>0)n=stop;
+ const l=lead(a,o,k,dr);if(l){const lm=l[k]-dr*gap;if(dr*(lm-o[k])>=0&&dr*(n-lm)>0)n=lm}
+ o[k]=n}
+// řadič (stejná logika jako v LOGO)
+let mode='idle',tm=0,aL=0,aR=0,carGo=true,boatGo=false,I=[0,0,0,0,0];
+const io=document.getElementById('io'),st=document.getElementById('st');
+io.innerHTML=['I1 snímač aut','I2 loď A','I3 loď B','I4 koncák L','I5 koncák P'].map(n=>'<span class="chip">'+n+'</span>').join('');
+function upd(dt){
+ ts+=dt;if(ts>=LOOP){ts-=LOOP;si=0}
+ while(si<SP.length&&SP[si][0]<=ts)spawn(SP[si++][1]);
+ const iA=boats.some(b=>Math.abs(b.z+20)<3.5),iB=boats.some(b=>Math.abs(b.z-20)<3.5);
+ const carOn=cars.some(c=>c.x>-13.6&&c.x<14),cut=aL>.17||aR>.17;
+ I=[carOn||cut,iA,iB,aL>=MAX-.002,aR>=MAX-.002];
+ const req=iA||iB;
+ if(mode=='idle'){carGo=!req;boatGo=false;if(req){mode='wait';tm=0;carGo=false}}
+ else if(mode=='wait'){carGo=false;if(carOn)tm=0;else tm+=dt;if(tm>=3)mode='lift'}
+ else if(mode=='lift'){if(aL<MAX)aL=Math.min(MAX,aL+.32*dt);if(aR<MAX)aR=Math.min(MAX,aR+.30*dt);if(I[3]&&I[4]||(aL>=MAX&&aR>=MAX)){mode='open';tm=0;boatGo=true}}
+ else if(mode=='open'){if(boats.some(b=>Math.abs(b.z)<=27))tm=0;else tm+=dt;if(tm>=2){mode='lower';boatGo=false}}
+ else{aL=Math.max(0,aL-MAX/4*dt);aR=Math.max(0,aR-MAX/4*dt);if(aL<=0&&aR<=0)mode='idle'}
+ cars.forEach(c=>mv(cars,c,'x',9,-15,carGo,4.5,dt));
+ boats.forEach(b=>mv(boats,b,'z',6,b.d>0?-20:20,boatGo,9,dt));
+ for(let i=cars.length;i--;)if(cars[i].x>50){S.remove(cars[i].g);cars.splice(i,1)}
+ for(let i=boats.length;i--;)if(boats[i].d*boats[i].z>44){S.remove(boats[i].g);boats.splice(i,1)}
+ cars.forEach(c=>c.g.position.x=c.x);boats.forEach(b=>b.g.position.z=b.z);
+ arm[0].rotation.z=aL;arm[1].rotation.z=-aR;
+ cord.forEach((l,i)=>{const s=i?1:-1,a=i?aR:aL,L=7.5;l.geometry.setFromPoints([new THREE.Vector3(s*9.4,15.8,0),new THREE.Vector3(s*8.8-s*L*Math.cos(a),3.7+L*Math.sin(a)+.4,0)])});
+ lim.forEach((m,i)=>m.material.color.set(I[3+i]?0x22ee55:0xff8800));
+ laser.material.color.set(I[0]?0xff2020:0x66ff66);
+ beams[0].material.color.set(iA?0xff2020:0xff9900);beams[1].material.color.set(iB?0xff2020:0xff9900);
+ car_s.forEach(s=>setS(s,carGo));boat_s.forEach(s=>setS(s,boatGo));
+ [...io.children].forEach((c,i)=>{c.style.background=I[i]?(i>2?'#2a2':'#d33'):'';c.style.color=I[i]?'#fff':''});
+ st.textContent={idle:'Klid: auta zelená, lodě červená'+(cars.length||boats.length?'':''),
+  wait:carOn?'Loď čeká, auta mají červenou – čekám, až auto projede mezi semafory':'Čekám 3 s bez auta na mostě ('+tm.toFixed(1)+' s)',
+  lift:'Motory zvedají ramena – každé se zastaví na svém koncáku',open:'Oba koncáky sepnuté → lodě mají zelenou (lodě za sebou i proti sobě)',
+  lower:'Lodě červená, ramena se spouštějí na čas (mechanická zarážka)'}[mode];
+}
+// kamera a smyčka
+const cv=R.domElement;cv.style.touchAction='none';let dr=null;
+cv.onpointerdown=e=>{dr=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId)};
+cv.onpointermove=e=>{if(!dr)return;th-=(e.clientX-dr[0])*.008;ph=Math.min(1.5,Math.max(.2,ph-(e.clientY-dr[1])*.008));dr=[e.clientX,e.clientY]};
+cv.onpointerup=()=>dr=null;
+cv.onwheel=e=>{e.preventDefault();d=Math.min(160,Math.max(30,d*(1+e.deltaY*.001)))};
+let run=true,sp=1,last=performance.now();
+document.getElementById('p').onclick=e=>{run=!run;e.target.textContent=run?'Pauza':'Spustit'};
+document.getElementById('sp').onclick=e=>{sp=sp%3+1;e.target.textContent='Rychlost ×'+sp};
+function loop(n){const dt=Math.min(.05,(n-last)/1000)*sp;last=n;if(run)upd(dt);
+ cam.position.set(tg.x+d*Math.sin(ph)*Math.sin(th),tg.y+d*Math.cos(ph),tg.z+d*Math.sin(ph)*Math.cos(th));cam.lookAt(tg);
+ R.render(S,cam);requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script></body></html>
